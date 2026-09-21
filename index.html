@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#4f3b78">
-  <title>Moonlight Meadow</title>
+  <title>Tamar’s Moonlight Meadow</title>
   <style>
     :root {
       --ink:#332b43; --muted:#766d82; --paper:#fffaf4; --card:#ffffff;
@@ -72,16 +72,16 @@
 <body>
   <main class="app">
     <header>
-      <div class="brand"><span class="crest">♞</span><span>Moonlight Meadow</span></div>
+      <div class="brand"><span class="crest">♞</span><span>Tamar’s Moonlight Meadow</span></div>
       <button class="icon-btn" id="season" aria-label="Change seasonal theme">🍂 Autumn</button>
     </header>
 
     <section class="page active" id="today">
-      <h1>Today’s meadow quests</h1>
+      <h1>Tamar’s meadow quests</h1>
       <p class="lead">One brave step at a time. You never have to do a hard moment alone.</p>
       <div class="hero">
         <small>Your companion</small>
-        <h2>Nova is exploring with you</h2>
+        <h2>Nova is exploring with you, Tamar</h2>
         <div class="stars"><b id="starCount">0</b> ✦ <span>courage stars today</span></div>
         <div class="progress" role="progressbar" aria-label="Today’s quests" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div>
         <div class="horse" aria-hidden="true">🐎</div>
@@ -121,7 +121,7 @@
     <button data-page="grownups">🔒<br>Grown-ups</button>
   </nav>
 
-  <dialog id="supportDialog"><div class="modal"><h2>You’re not in trouble.</h2><p>Choose what might make this moment a little easier. Your grown-up can stay with you.</p><div class="choices"><button>🎧 Put on a favourite calm song</button><button>🫶 Sit together quietly for a moment</button><button>🧩 Try a small distraction at the table</button><button>💬 Tell my grown-up what feels scary</button></div><button class="primary" id="closeSupport">Stay with me</button></div></dialog>
+  <dialog id="supportDialog"><div class="modal"><h2>Tamar, you’re not in trouble.</h2><p>Choose what might make this moment a little easier. Your grown-up can stay with you.</p><div class="choices"><button>🎧 Put on a favourite calm song</button><button>🫶 Sit together quietly for a moment</button><button>🧩 Try a small distraction at the table</button><button>💬 Tell my grown-up what feels scary</button></div><button class="primary" id="closeSupport">Stay with me</button></div></dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div><div class="confetti" id="confetti" aria-hidden="true"></div>
 
   <script>
