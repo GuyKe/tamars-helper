@@ -37,6 +37,9 @@
     .stars span{font-size:13px;color:white;font-weight:650;opacity:.75;margin-left:6px}
     .progress{height:9px;background:rgba(255,255,255,.18);border-radius:99px;margin-top:10px;overflow:hidden;width:63%}
     .progress>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff792f,#ffd26f);border-radius:inherit;transition:width .35s ease}
+    .journey{margin-top:16px;padding:18px;border:1px solid rgba(255,163,73,.3);border-radius:24px;background:linear-gradient(145deg,rgba(255,249,237,.98),rgba(250,228,207,.98));box-shadow:var(--shadow)}
+    .journey-head{display:flex;align-items:start;justify-content:space-between;gap:12px}.journey h2{font-size:19px;margin:0 0 4px}.journey-head p{margin:0;color:var(--muted);font-size:12px}.journey-score{white-space:nowrap;border-radius:14px;background:#5d2c78;color:white;padding:8px 10px;font-size:13px;font-weight:850}
+    .journey-map{width:100%;height:auto;display:block;margin:8px 0 3px;overflow:visible}.journey-road{fill:none;stroke:#d4baa9;stroke-width:18;stroke-linecap:round}.journey-progress{fill:none;stroke:#f17b35;stroke-width:11;stroke-linecap:round;transition:stroke-dashoffset .5s ease}.journey-dashes{fill:none;stroke:#fff3d5;stroke-width:2.5;stroke-linecap:round;stroke-dasharray:8 11;opacity:.9}.journey-map text{font-size:22px}.journey-map .phone{font-size:34px}.journey-map .rider{font-size:29px;filter:drop-shadow(0 4px 4px rgba(42,18,47,.25));transition:x .5s ease,y .5s ease}.journey-caption{margin:0;color:var(--muted);font-size:12px;line-height:1.4;text-align:center}
     .section-title{display:flex;justify-content:space-between;align-items:end;margin:26px 2px 12px}
     .section-title h2{font-size:20px;margin:0;color:#fff4e4}.section-title span{font-size:13px;color:#f4b86b}
     .quest-list{display:grid;gap:12px}
@@ -89,6 +92,18 @@
         <div class="progress" role="progressbar" aria-label="Today’s quests" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div>
         <div class="horse" aria-hidden="true">🐎</div>
       </div>
+      <section class="journey" aria-labelledby="journeyTitle">
+        <div class="journey-head"><div><h2 id="journeyTitle">The road to iPhone 18 Pro</h2><p>Every completed care-plan step moves the journey forward.</p></div><div class="journey-score"><span id="journeyStars">0</span> / <span id="journeyGoal">500</span> ✦</div></div>
+        <svg class="journey-map" viewBox="0 0 600 170" role="img" aria-labelledby="journeyMapTitle journeyMapDesc">
+          <title id="journeyMapTitle">Tamar’s progress road</title><desc id="journeyMapDesc">Nova travels along a winding Halloween road toward an iPhone reward.</desc>
+          <path class="journey-road" id="journeyRoad" d="M30 136 C105 18 185 150 278 104 S425 20 566 48"/>
+          <path class="journey-progress" id="journeyProgress" d="M30 136 C105 18 185 150 278 104 S425 20 566 48"/>
+          <path class="journey-dashes" d="M30 136 C105 18 185 150 278 104 S425 20 566 48"/>
+          <text x="5" y="158" aria-hidden="true">🎃</text><text x="540" y="45" class="phone" aria-hidden="true">📱</text>
+          <text id="journeyRider" class="rider" x="30" y="124" aria-hidden="true">🐎</text>
+        </svg>
+        <p class="journey-caption" id="journeyMessage">The first lantern is waiting. Hard moments never erase progress already earned.</p>
+      </section>
       <div class="section-title"><h2>Care-plan quests</h2><span id="doneCount">0 of 6 complete</span></div>
       <div class="quest-list" id="questList"></div>
       <div class="support"><span aria-hidden="true">💜</span><div><button id="supportBtn">This feels hard — I need support</button><p>No stars are ever lost. Asking for help is brave.</p></div></div>
@@ -113,6 +128,10 @@
       <div class="panel">
         <h2>Reward style</h2>
         <p>Each completed plan step earns the same two courage stars. The app does not score foods, bites, calories, weight, speed, or “perfect” days.</p>
+        <label for="goalStars">Journey target (courage stars)</label>
+        <input id="goalStars" type="number" min="32" step="2" inputmode="numeric" aria-describedby="goalHelp">
+        <div class="note" id="goalHelp">Choose the total together with Tamar and her treatment team. Progress only moves forward.</div>
+        <div class="actions"><button class="primary" id="saveGoal">Save journey target</button></div>
         <button class="secondary" id="resetDay">Start a fresh day</button>
       </div>
     </section>
@@ -156,6 +175,8 @@
     let plan=JSON.parse(localStorage.getItem('mm-plan')||'null')||defaultPlan;
     let completed=JSON.parse(localStorage.getItem('mm-completed')||'[]');
     let lifetime=Number(localStorage.getItem('mm-lifetime')||0);
+    let awarded=JSON.parse(localStorage.getItem('mm-awarded')||JSON.stringify(completed));
+    let goalStars=Math.max(32,Number(localStorage.getItem('mm-goal-stars')||500));
     const $=s=>document.querySelector(s);
     function safe(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
     function render(){
@@ -164,7 +185,16 @@
       $('#starCount').textContent=stars; $('#doneCount').textContent=`${completed.length} of ${plan.length} complete`;
       $('.progress i').style.width=pct+'%'; $('.progress').setAttribute('aria-valuenow',Math.round(pct));
       $('#collection').innerHTML=rewards.map(r=>`<article class="reward ${lifetime<r[3]?'locked':''}"><div class="art">${lifetime<r[3]?'🔒':r[0]}</div><h3>${r[1]}</h3><p>${lifetime<r[3]?`${r[3]-lifetime} more stars`:r[2]}</p></article>`).join('');
+      renderJourney();
       renderEditor();
+    }
+    function renderJourney(){
+      const pct=Math.min(1,lifetime/goalStars), road=$('#journeyRoad'), progress=$('#journeyProgress'), rider=$('#journeyRider');
+      const length=road.getTotalLength(), point=road.getPointAtLength(length*pct);
+      progress.style.strokeDasharray=length;progress.style.strokeDashoffset=length*(1-pct);
+      rider.setAttribute('x',point.x-15);rider.setAttribute('y',point.y-10);
+      $('#journeyStars').textContent=lifetime;$('#journeyGoal').textContent=goalStars;$('#goalStars').value=goalStars;
+      $('#journeyMessage').textContent=pct>=1?'The destination is here — what an incredible journey!':pct>=.75?'The phone is in sight. Keep following the lanterns!':pct>=.5?'Halfway through the enchanted forest — Nova is proud of every brave step.':pct>=.25?'The road is glowing brighter with every step.':'The first lanterns are lit. Hard moments never erase progress already earned.';
     }
     function renderEditor(){
       $('#planEditor').innerHTML=plan.map((q,i)=>`<div class="plan-row"><input class="time" aria-label="Step ${i+1} name" value="${safe(q.time)}"><input class="item" aria-label="Step ${i+1} plan item" value="${safe(q.item)}"><button class="remove" data-remove="${i}" aria-label="Remove step">×</button></div>`).join('');
@@ -172,13 +202,14 @@
     function toast(msg){$('#toast').textContent=msg;$('#toast').classList.add('show');setTimeout(()=>$('#toast').classList.remove('show'),2200)}
     function celebrate(){const c=$('#confetti');c.innerHTML='';for(let i=0;i<22;i++){let e=document.createElement('i');e.textContent=['✦','🎃','★','🦇'][i%4];e.style.left=Math.random()*100+'%';e.style.color=['#ff8a48','#ffc65b','#9a5bb5','#9fcbb9'][i%4];e.style.setProperty('--drift',(Math.random()*160-80)+'px');e.style.animationDelay=Math.random()*.25+'s';c.appendChild(e)}setTimeout(()=>c.innerHTML='',2000)}
     document.addEventListener('click',e=>{
-      if(e.target.matches('.complete')){const i=Number(e.target.dataset.i);if(completed.includes(i)){completed=completed.filter(x=>x!==i);lifetime=Math.max(0,lifetime-2)}else{completed.push(i);lifetime+=2;celebrate();toast('Brave step complete — 2 courage stars!')}localStorage.setItem('mm-completed',JSON.stringify(completed));localStorage.setItem('mm-lifetime',lifetime);render()}
+      if(e.target.matches('.complete')){const i=Number(e.target.dataset.i);if(completed.includes(i)){completed=completed.filter(x=>x!==i)}else{completed.push(i);if(!awarded.includes(i)){awarded.push(i);lifetime+=2;celebrate();toast('Nova moved closer — 2 courage stars!')}else{toast('Step marked complete')}}localStorage.setItem('mm-completed',JSON.stringify(completed));localStorage.setItem('mm-awarded',JSON.stringify(awarded));localStorage.setItem('mm-lifetime',lifetime);render()}
       if(e.target.matches('[data-remove]')){plan.splice(Number(e.target.dataset.remove),1);renderEditor()}
     });
     document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button,.page').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#'+b.dataset.page).classList.add('active');scrollTo({top:0,behavior:'smooth'})});
     $('#addStep').onclick=()=>{plan.push({time:'Plan step',item:'Enter the prescribed item'});renderEditor()};
     $('#savePlan').onclick=()=>{plan=[...document.querySelectorAll('.plan-row')].map(r=>({time:r.querySelector('.time').value.trim()||'Plan step',item:r.querySelector('.item').value.trim()||'Use the care plan'}));completed=completed.filter(i=>i<plan.length);localStorage.setItem('mm-plan',JSON.stringify(plan));localStorage.setItem('mm-completed',JSON.stringify(completed));render();toast('Today’s plan is saved')};
-    $('#resetDay').onclick=()=>{completed=[];localStorage.setItem('mm-completed','[]');render();toast('A fresh day is ready')};
+    $('#saveGoal').onclick=()=>{goalStars=Math.max(32,Math.round((Number($('#goalStars').value)||500)/2)*2);localStorage.setItem('mm-goal-stars',goalStars);renderJourney();toast('Journey target saved')};
+    $('#resetDay').onclick=()=>{completed=[];awarded=[];localStorage.setItem('mm-completed','[]');localStorage.setItem('mm-awarded','[]');render();toast('A fresh day is ready — the journey progress is safe')};
     $('#season').onclick=()=>{document.body.classList.toggle('winter');const w=document.body.classList.contains('winter');$('#season').textContent=w?'❄️ Winter':'🎃 Halloween'};
     $('#supportBtn').onclick=()=>$('#supportDialog').showModal();$('#closeSupport').onclick=()=>$('#supportDialog').close();document.querySelectorAll('.choices button').forEach(b=>b.onclick=()=>{toast('Good choice — your grown-up can help');$('#supportDialog').close()});
     render();
